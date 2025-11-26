@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Hunt - Icebreaker Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        #root {
+            width: 100%;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React, ReactDOM, and Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBQHJQCFmh8Ftc1r2R1yvIAZ1W7b9tqVrU",
+            authDomain: "find-someone-780e8.firebaseapp.com",
+            projectId: "find-someone-780e8",
+            storageBucket: "find-someone-780e8.firebasestorage.app",
+            messagingSenderId: "327720919968",
+            appId: "1:327720919968:web:0de6ab6cf640873e3b3ac5"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make Firebase available globally
+        window.firebaseDB = db;
+        window.firebaseDoc = doc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseCollection = collection;
+        window.firebaseOnSnapshot = onSnapshot;
+        window.firebaseQuery = query;
+        window.firebaseOrderBy = orderBy;
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- React Application -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide icon components
+        const Users = () => <i data-lucide="users"></i>;
+        const Trophy = () => <i data-lucide="trophy"></i>;
+        const Sparkles = () => <i data-lucide="sparkles"></i>;
+        const ArrowLeft = () => <i data-lucide="arrow-left"></i>;
+
+        // Initialize Lucide icons after render
+        const useLucide = () => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            });
+        };
+
+        // Sample prompts
+        const PROMPTS = [
+            "doesn't know how to ride a bike",
+            "is younger than you",
+            "is not from London",
+            "can speak 3 or more languages",
+            "has traveled to more than 5 countries",
+            "plays a musical instrument",
+            "has been to a concert this year",
+            "has read more than 10 books this year",
+            "has met a celebrity",
+            "is scared of heights",
+            "loves waking up early",
+            "prefers tea over coffee",
+            "is born in the same month as you",
+            "can whistle really loudly",
+            "has the same shoe size as you",
+            "is an only child",
+            "has more than 2 siblings",
+            "plays video games daily",
+            "doesn't have Instagram",
+            "can touch their toes",
+            "is left-handed",
+            "doesn't like sushi",
+            "can say the alphabet backwards",
+            "has been to Africa (excluding Egypt)",
+            "has run a marathon",
+            "can juggle",
+            "has the same favorite color as you",
+            "was born in a different country",
+            "has never had a pet",
+            "loves pineapple on pizza",
+            "hates chocolate",
+            "can do a cartwheel",
+            "plays a sport competitively",
+            "has acted in a play",
+            "has never watched Harry Potter",
+            "loves spicy food",
+            "is allergic to something",
+            "has been on TV or radio",
+            "can play chess",
+            "has never been camping",
+            "loves to sing karaoke",
+            "has visited more than 10 countries",
+            "has the same birth year as you",
+            "wears glasses or contacts",
+            "has a twin",
+            "can drive a manual car",
+            "has never broken their phone screen",
+            "loves horror movies",
+            "can ice skate",
+            "has been to Disney World or Disneyland",
+            "loves getting up early on weekends",
+            "has read the entire Bible",
+            "plays a musical instrument",
+            "has written a song",
+            "has been on a mission trip",
+            "loves doing puzzles",
+            "has climbed a mountain",
+            "has been baptized this year",
+            "loves public speaking",
+            "is afraid of spiders",
+            "doesn't drink coffee",
+            "can bake a cake from scratch",
+            "has been to a music festival",
+            "loves roller coasters",
+            "can do 20 push-ups in a row",
+            "loves reading the news",
+            "can name 5 books of the Old Testament in order",
+            "loves gardening",
+            "has been to Asia",
+            "has never watched a Marvel movie",
+            "loves board games",
+            "has been snorkeling or scuba diving",
+            "can whistle a tune",
+            "loves astronomy and stargazing",
+            "can name all the fruits of the Spirit",
+            "has performed in front of more than 100 people",
+            "loves doing crafts",
+            "has been to Australia",
+            "loves classical music",
+            "has been to a Broadway show",
+            "can name 10 countries in Africa",
+            "loves photography",
+            "has been zip-lining",
+            "loves cooking for others",
+            "has been to South America",
+            "can do the splits",
+            "has never eaten seafood",
+            "loves painting or drawing",
+            "has been to a professional sports game",
+            "can name 5 miracles Jesus performed",
+            "loves hiking",
+            "loves writing poetry or stories",
+            "can name the 10 Commandments",
+            "loves dancing",
+            "can play the piano",
+            "loves volunteering",
+            "has been to a comedy show",
+            "loves fashion and style",
+            "loves science experiments",
+            "can name all 4 Gospels",
+            "loves documentaries",
+            "can name the armor of God (Ephesians 6)",
+            "loves animals more than people",
+            "has been horseback riding",
+            "loves technology and gadgets",
+            "has been to a water park",
+            "can name the 12 tribes of Israel",
+            "loves meditation or quiet time",
+            "has been rock climbing",
+            "loves playing sports",
+            "has been to a museum this month",
+            "can name 5 parables Jesus taught",
+            "loves baking",
+            "has been sailing",
+            "loves learning new languages",
+            "has been to a botanical garden",
+            "can name the beatitudes",
+            "loves running or jogging",
+            "has been canoeing or kayaking",
+            "loves podcasts",
+            "can name 5 women in the Bible",
+            "loves yoga or pilates",
+            "has been to a zoo this year",
+            "loves traveling by train",
+            "has been to a national park",
+            "can name the 7 days of creation",
+            "loves swimming",
+            "has been fishing",
+            "loves mathematics",
+            "has been to an art gallery",
+            "can name 5 prophets from the Bible",
+            "loves cycling",
+            "has been to a vineyard or winery",
+            "loves film and movies",
+            "has been to a castle",
+            "has been skiing or snowboarding",
+            "loves playing an instrument daily",
+            "has been to a lighthouse",
+            "loves competitive gaming or esports",
+            "has been to a farm"
+        ];
+
+        function IcebreakerApp() {
+            useLucide();
+
+            const [page, setPage] = useState('welcome');
+            const [playerName, setPlayerName] = useState('');
+            const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+            const [signatureName, setSignatureName] = useState('');
+            const [signatures, setSignatures] = useState([]);
+            const [players, setPlayers] = useState([]);
+            const [nameError, setNameError] = useState('');
+            const [skipCount, setSkipCount] = useState(0);
+            const MAX_SKIPS = 5;
+            const [shuffledPrompts, setShuffledPrompts] = useState([]);
+            const [playerId, setPlayerId] = useState(null);
+            const [firebaseInitialized, setFirebaseInitialized] = useState(false);
+
+            // Wait for Firebase to be ready
+            useEffect(() => {
+                if (window.firebaseReady) {
+                    setFirebaseInitialized(true);
+                } else {
+                    const handleFirebaseReady = () => setFirebaseInitialized(true);
+                    window.addEventListener('firebaseReady', handleFirebaseReady);
+                    return () => window.removeEventListener('firebaseReady', handleFirebaseReady);
+                }
+            }, []);
+
+            // Shuffle prompts on mount
+            useEffect(() => {
+                const shuffled = [...PROMPTS];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                setShuffledPrompts(shuffled);
+            }, []);
+
+            // Listen to all players in real-time
+            useEffect(() => {
+                if (!firebaseInitialized) return;
+
+                const playersQuery = window.firebaseQuery(
+                    window.firebaseCollection(window.firebaseDB, 'players'),
+                    window.firebaseOrderBy('signatures', 'desc')
+                );
+                
+                const unsubscribe = window.firebaseOnSnapshot(playersQuery, (snapshot) => {
+                    const playersData = [];
+                    snapshot.forEach((doc) => {
+                        playersData.push({ id: doc.id, ...doc.data() });
+                    });
+                    setPlayers(playersData);
+                });
+
+                return () => unsubscribe();
+            }, [firebaseInitialized]);
+
+            // Update player data in Firebase whenever signatures change
+            useEffect(() => {
+                if (!firebaseInitialized || !playerId || !playerName) return;
+
+                const playerRef = window.firebaseDoc(window.firebaseDB, 'players', playerId);
+                window.firebaseSetDoc(playerRef, {
+                    name: playerName,
+                    signatures: signatures.length,
+                    lastUpdated: Date.now()
+                }, { merge: true });
+            }, [signatures, playerId, playerName, firebaseInitialized]);
+
+            const handleStartGame = async () => {
+                if (!playerName.trim()) {
+                    setNameError('Please enter your name!');
+                    return;
+                }
+                setNameError('');
+
+                if (!firebaseInitialized) {
+                    setNameError('Connecting to server...');
+                    return;
+                }
+
+                const newPlayerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                setPlayerId(newPlayerId);
+
+                const playerRef = window.firebaseDoc(window.firebaseDB, 'players', newPlayerId);
+                await window.firebaseSetDoc(playerRef, {
+                    name: playerName.trim(),
+                    signatures: 0,
+                    lastUpdated: Date.now()
+                });
+
+                setPage('game');
+            };
+
+            const handleSignature = () => {
+                if (!signatureName.trim()) return;
+
+                const newSignature = {
+                    prompt: shuffledPrompts[currentPromptIndex],
+                    signedBy: signatureName,
+                    timestamp: Date.now()
+                };
+
+                setSignatures([...signatures, newSignature]);
+                setSignatureName('');
+
+                if (currentPromptIndex < shuffledPrompts.length - 1) {
+                    setCurrentPromptIndex(currentPromptIndex + 1);
+                } else {
+                    setCurrentPromptIndex(0);
+                }
+            };
+
+            const handleSkip = () => {
+                if (skipCount < MAX_SKIPS) {
+                    setSkipCount(skipCount + 1);
+                    if (currentPromptIndex < shuffledPrompts.length - 1) {
+                        setCurrentPromptIndex(currentPromptIndex + 1);
+                    } else {
+                        setCurrentPromptIndex(0);
+                    }
+                }
+            };
+
+            const handleKeyPress = (e, action) => {
+                if (e.key === 'Enter') {
+                    action();
+                }
+            };
+
+            const leaderboardData = players.map(player => ({
+                name: player.name,
+                signatures: player.signatures,
+                isCurrentPlayer: player.id === playerId
+            }));
+
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                    fontFamily: '"Fredoka", "Comic Neue", cursive, sans-serif',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        opacity: 0.1,
+                        background: 'radial-gradient(circle at 20% 50%, white 0%, transparent 50%), radial-gradient(circle at 80% 80%, white 0%, transparent 50%)',
+                        animation: 'pulse 4s ease-in-out infinite'
+                    }} />
+
+                    <style>{`
+                        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+                        
+                        @keyframes pulse {
+                            0%, 100% { opacity: 0.1; }
+                            50% { opacity: 0.2; }
+                        }
+                        
+                        @keyframes slideUp {
+                            from {
+                                opacity: 0;
+                                transform: translateY(30px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+                        
+                        @keyframes bounce {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-10px); }
+                        }
+                        
+                        .slide-up {
+                            animation: slideUp 0.6s ease-out forwards;
+                        }
+                        
+                        .bounce {
+                            animation: bounce 2s ease-in-out infinite;
+                        }
+                        
+                        input {
+                            transition: all 0.3s ease;
+                        }
+                        
+                        input:focus {
+                            transform: scale(1.02);
+                            box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+                        }
+                        
+                        button {
+                            transition: all 0.3s ease;
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        
+                        button:active {
+                            transform: scale(0.95);
+                        }
+                        
+                        button:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important;
+                        }
+                        
+                        .signature-card {
+                            transition: all 0.3s ease;
+                        }
+                        
+                        .signature-card:hover {
+                            transform: translateX(5px);
+                        }
+
+                        i[data-lucide] {
+                            width: 20px;
+                            height: 20px;
+                        }
+                    `}</style>
+
+                    {page === 'welcome' && (
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '100vh',
+                            padding: '20px',
+                            position: 'relative',
+                            zIndex: 1
+                        }}>
+                            <div className="slide-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
+                                <div className="bounce" style={{
+                                    background: 'white',
+                                    borderRadius: '50%',
+                                    width: '100px',
+                                    height: '100px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '30px',
+                                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+                                }}>
+                                    <Users />
+                                </div>
+                            </div>
+
+                            <h1 className="slide-up" style={{
+                                fontSize: '3rem',
+                                fontWeight: '700',
+                                color: 'white',
+                                marginBottom: '15px',
+                                textAlign: 'center',
+                                textShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                animationDelay: '0.2s',
+                                opacity: 0
+                            }}>
+                                Signature Hunt!
+                            </h1>
+
+                            <div className="slide-up" style={{
+                                width: '100%',
+                                maxWidth: '400px',
+                                animationDelay: '0.4s',
+                                opacity: 0
+                            }}>
+                                <input
+                                    type="text"
+                                    placeholder="Enter your name"
+                                    value={playerName}
+                                    onChange={(e) => {
+                                        setPlayerName(e.target.value);
+                                        setNameError('');
+                                    }}
+                                    onKeyPress={(e) => handleKeyPress(e, handleStartGame)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '20px',
+                                        fontSize: '1.2rem',
+                                        borderRadius: '15px',
+                                        border: 'none',
+                                        marginBottom: nameError ? '10px' : '25px',
+                                        textAlign: 'center',
+                                        fontFamily: 'inherit',
+                                        fontWeight: '500',
+                                        boxShadow: '0 5px 25px rgba(0,0,0,0.2)',
+                                        outline: 'none'
+                                    }}
+                                />
+
+                                {nameError && (
+                                    <p style={{
+                                        color: '#fff',
+                                        fontSize: '0.9rem',
+                                        marginBottom: '15px',
+                                        textAlign: 'center',
+                                        fontWeight: '600',
+                                        textShadow: '0 2px 5px rgba(0,0,0,0.3)'
+                                    }}>
+                                        {nameError}
+                                    </p>
+                                )}
+
+                                <button
+                                    onClick={handleStartGame}
+                                    style={{
+                                        width: '100%',
+                                        padding: '22px',
+                                        fontSize: '1.4rem',
+                                        fontWeight: '700',
+                                        color: 'white',
+                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                        border: 'none',
+                                        borderRadius: '15px',
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <Sparkles />
+                                    Start the Fun!
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {page === 'game' && (
+                        <div style={{
+                            minHeight: '100vh',
+                            padding: '15px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            position: 'relative',
+                            zIndex: 1
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '15px'
+                            }}>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                    fontWeight: '600',
+                                    fontSize: '1rem',
+                                    color: '#667eea'
+                                }}>
+                                    Hey, {playerName}! 👋
+                                </div>
+
+                                <button
+                                    onClick={() => setPage('leaderboard')}
+                                    style={{
+                                        background: 'white',
+                                        padding: '10px 16px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        fontWeight: '600',
+                                        fontSize: '1rem',
+                                        color: '#667eea',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}
+                                >
+                                    <Trophy />
+                                    Leaderboard
+                                </button>
+                            </div>
+
+                            <div style={{
+                                background: 'rgba(255,255,255,0.25)',
+                                backdropFilter: 'blur(10px)',
+                                padding: '15px',
+                                borderRadius: '15px',
+                                marginBottom: '15px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                            }}>
+                                <div style={{
+                                    fontSize: '2.2rem',
+                                    fontWeight: '700',
+                                    color: 'white',
+                                    textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                                }}>
+                                    {signatures.length}
+                                </div>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    color: 'rgba(255,255,255,0.95)',
+                                    fontWeight: '600',
+                                    marginBottom: '10px'
+                                }}>
+                                    Signatures Collected
+                                </div>
+                                <div style={{
+                                    fontSize: '0.9rem',
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontWeight: '500',
+                                    padding: '8px 12px',
+                                    background: 'rgba(255,255,255,0.15)',
+                                    borderRadius: '10px',
+                                    display: 'inline-block'
+                                }}>
+                                    ⏭️ Skips remaining: {MAX_SKIPS - skipCount}/{MAX_SKIPS}
+                                </div>
+                            </div>
+
+                            {shuffledPrompts.length > 0 && (
+                                <div style={{
+                                    background: 'white',
+                                    padding: '25px 20px',
+                                    borderRadius: '20px',
+                                    marginBottom: '15px',
+                                    boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.95rem',
+                                        color: '#999',
+                                        marginBottom: '12px',
+                                        fontWeight: '500'
+                                    }}>
+                                        Find someone who
+                                    </div>
+                                    <div style={{
+                                        fontSize: '1.6rem',
+                                        fontWeight: '600',
+                                        color: '#333',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {shuffledPrompts[currentPromptIndex]}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{
+                                background: 'white',
+                                padding: '20px',
+                                borderRadius: '20px',
+                                marginBottom: '15px',
+                                boxShadow: '0 8px 30px rgba(0,0,0,0.2)'
+                            }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    color: '#333',
+                                    marginBottom: '10px'
+                                }}>
+                                    Get their signature:
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Their name here"
+                                    value={signatureName}
+                                    onChange={(e) => setSignatureName(e.target.value)}
+                                    onKeyPress={(e) => handleKeyPress(e, handleSignature)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        fontSize: '1.1rem',
+                                        borderRadius: '12px',
+                                        border: '2px solid #e0e0e0',
+                                        marginBottom: '12px',
+                                        fontFamily: 'inherit',
+                                        fontWeight: '500',
+                                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                                        outline: 'none'
+                                    }}
+                                />
+                                <button
+                                    onClick={handleSignature}
+                                    disabled={!signatureName.trim()}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        color: 'white',
+                                        background: signatureName.trim()
+                                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                            : '#ccc',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        cursor: signatureName.trim() ? 'pointer' : 'not-allowed',
+                                        fontFamily: 'inherit',
+                                        boxShadow: signatureName.trim() ? '0 4px 20px rgba(0,0,0,0.2)' : 'none',
+                                        marginBottom: '10px'
+                                    }}
+                                >
+                                    ✍️ Sign & Next Challenge
+                                </button>
+
+                                <button
+                                    onClick={handleSkip}
+                                    disabled={skipCount >= MAX_SKIPS}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
+                                        color: skipCount >= MAX_SKIPS ? '#999' : '#667eea',
+                                        background: 'white',
+                                        border: skipCount >= MAX_SKIPS ? '2px solid #e0e0e0' : '2px solid #667eea',
+                                        borderRadius: '12px',
+                                        cursor: skipCount >= MAX_SKIPS ? 'not-allowed' : 'pointer',
+                                        fontFamily: 'inherit',
+                                        opacity: skipCount >= MAX_SKIPS ? 0.5 : 1
+                                    }}
+                                >
+                                    {skipCount >= MAX_SKIPS ? '❌ No Skips Left' : `⏭️ Skip (${MAX_SKIPS - skipCount} left)`}
+                                </button>
+                            </div>
+
+                            {signatures.length > 0 && (
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.25)',
+                                    backdropFilter: 'blur(10px)',
+                                    padding: '20px',
+                                    borderRadius: '20px',
+                                    marginBottom: '15px',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                                }}>
+                                    <h3 style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        color: 'white',
+                                        marginBottom: '12px',
+                                        textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                                    }}>
+                                        Your Signatures 📝
+                                    </h3>
+                                    <div style={{
+                                        maxHeight: '200px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        {signatures.slice().reverse().map((sig, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="signature-card"
+                                                style={{
+                                                    background: 'white',
+                                                    padding: '12px',
+                                                    borderRadius: '12px',
+                                                    marginBottom: '8px',
+                                                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    fontSize: '0.9rem',
+                                                    color: '#667eea',
+                                                    fontWeight: '600',
+                                                    marginBottom: '4px'
+                                                }}>
+                                                    {sig.signedBy}
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.8rem',
+                                                    color: '#999'
+                                                }}>
+                                                    {sig.prompt}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{
+                                background: 'rgba(255,255,255,0.25)',
+                                backdropFilter: 'blur(10px)',
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+                                fontSize: '0.85rem',
+                                color: 'rgba(255,255,255,0.95)',
+                                fontWeight: '500',
+                                lineHeight: '1.4'
+                            }}>
+                                💡 <strong>Tip:</strong> Some challenges are tricky! Use your skips wisely or you might get stuck.
+                            </div>
+                        </div>
+                    )}
+
+                    {page === 'leaderboard' && (
+                        <div style={{
+                            minHeight: '100vh',
+                            padding: '20px',
+                            position: 'relative',
+                            zIndex: 1
+                        }}>
+                            <button
+                                onClick={() => setPage('game')}
+                                style={{
+                                    background: 'white',
+                                    padding: '12px 20px',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                    fontWeight: '600',
+                                    fontSize: '1rem',
+                                    color: '#667eea',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                    marginBottom: '25px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <ArrowLeft />
+                                Back to Game
+                            </button>
+
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '25px',
+                                padding: '30px',
+                                maxWidth: '600px',
+                                margin: '0 auto',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+                            }}>
+                                <div style={{
+                                    textAlign: 'center',
+                                    marginBottom: '30px'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                                        <Trophy />
+                                    </div>
+                                    <h2 style={{
+                                        fontSize: '2.2rem',
+                                        fontWeight: '700',
+                                        color: '#333',
+                                        marginBottom: '10px'
+                                    }}>
+                                        Leaderboard
+                                    </h2>
+                                    <p style={{
+                                        fontSize: '1rem',
+                                        color: '#666'
+                                    }}>
+                                        Who's collecting the most signatures?
+                                    </p>
+                                </div>
+
+                                <div>
+                                    {leaderboardData.map((player, idx) => (
+                                        <div
+                                            key={idx}
+                                            style={{
+                                                background: player.isCurrentPlayer
+                                                    ? 'linear-gradient(135deg, #667eea15, #764ba215)'
+                                                    : idx === 0 ? '#fff9e6' : '#f8f9ff',
+                                                padding: '20px',
+                                                borderRadius: '15px',
+                                                marginBottom: '12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                border: player.isCurrentPlayer ? '2px solid #667eea' : 'none',
+                                                boxShadow: idx === 0 ? '0 4px 15px rgba(245, 87, 108, 0.2)' : '0 2px 10px rgba(0,0,0,0.05)'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                <div style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    background: idx === 0
+                                                        ? 'linear-gradient(135deg, #f5576c, #f093fb)'
+                                                        : idx === 1
+                                                            ? 'linear-gradient(135deg, #667eea, #764ba2)'
+                                                            : '#e0e0e0',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'white',
+                                                    fontWeight: '700',
+                                                    fontSize: '1.2rem'
+                                                }}>
+                                                    {idx === 0 ? '🏆' : idx + 1}
+                                                </div>
+                                                <div>
+                                                    <div style={{
+                                                        fontWeight: '600',
+                                                        fontSize: '1.1rem',
+                                                        color: '#333'
+                                                    }}>
+                                                        {player.name} {player.isCurrentPlayer && '(You)'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: '700',
+                                                color: idx === 0 ? '#f5576c' : '#667eea'
+                                            }}>
+                                                {player.signatures}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{
+                                    background: '#f8f9ff',
+                                    padding: '20px',
+                                    borderRadius: '12px',
+                                    marginTop: '25px',
+                                    textAlign: 'center',
+                                    fontSize: '0.95rem',
+                                    color: '#666',
+                                    lineHeight: '1.5'
+                                }}>
+                                    🔄 <strong>Live updates!</strong> The leaderboard refreshes automatically as players collect signatures.
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<IcebreakerApp />);
+    </script>
+</body>
+</html>
