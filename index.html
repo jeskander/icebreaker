@@ -249,6 +249,48 @@
             const [adminError, setAdminError] = useState('');
             const ADMIN_PASSWORD = 'reset2024'; // Change this to your desired password
 
+            // Load saved session from localStorage on mount
+            useEffect(() => {
+                const savedPlayerId = localStorage.getItem('icebreaker_playerId');
+                const savedPlayerName = localStorage.getItem('icebreaker_playerName');
+                const savedSignatures = localStorage.getItem('icebreaker_signatures');
+                const savedSkipCount = localStorage.getItem('icebreaker_skipCount');
+                const savedPromptIndex = localStorage.getItem('icebreaker_promptIndex');
+
+                if (savedPlayerId && savedPlayerName) {
+                    setPlayerId(savedPlayerId);
+                    setPlayerName(savedPlayerName);
+                    setPage('game');
+                    
+                    if (savedSignatures) {
+                        try {
+                            setSignatures(JSON.parse(savedSignatures));
+                        } catch (e) {
+                            console.error('Error parsing signatures:', e);
+                        }
+                    }
+                    
+                    if (savedSkipCount) {
+                        setSkipCount(parseInt(savedSkipCount) || 0);
+                    }
+                    
+                    if (savedPromptIndex) {
+                        setCurrentPromptIndex(parseInt(savedPromptIndex) || 0);
+                    }
+                }
+            }, []);
+
+            // Save session to localStorage whenever it changes
+            useEffect(() => {
+                if (playerId && playerName) {
+                    localStorage.setItem('icebreaker_playerId', playerId);
+                    localStorage.setItem('icebreaker_playerName', playerName);
+                    localStorage.setItem('icebreaker_signatures', JSON.stringify(signatures));
+                    localStorage.setItem('icebreaker_skipCount', skipCount.toString());
+                    localStorage.setItem('icebreaker_promptIndex', currentPromptIndex.toString());
+                }
+            }, [playerId, playerName, signatures, skipCount, currentPromptIndex]);
+
             // Wait for Firebase to be ready
             useEffect(() => {
                 if (window.firebaseReady) {
@@ -259,6 +301,35 @@
                     return () => window.removeEventListener('firebaseReady', handleFirebaseReady);
                 }
             }, []);
+
+            // Load saved player data from localStorage on mount
+            useEffect(() => {
+                const savedPlayerId = localStorage.getItem('icebreaker_playerId');
+                const savedPlayerName = localStorage.getItem('icebreaker_playerName');
+                const savedSignatures = localStorage.getItem('icebreaker_signatures');
+                const savedSkipCount = localStorage.getItem('icebreaker_skipCount');
+                const savedPromptIndex = localStorage.getItem('icebreaker_promptIndex');
+
+                if (savedPlayerId && savedPlayerName) {
+                    setPlayerId(savedPlayerId);
+                    setPlayerName(savedPlayerName);
+                    setSignatures(savedSignatures ? JSON.parse(savedSignatures) : []);
+                    setSkipCount(savedSkipCount ? parseInt(savedSkipCount) : 0);
+                    setCurrentPromptIndex(savedPromptIndex ? parseInt(savedPromptIndex) : 0);
+                    setPage('game'); // Automatically go to game page
+                }
+            }, []);
+
+            // Save player data to localStorage whenever it changes
+            useEffect(() => {
+                if (playerId) {
+                    localStorage.setItem('icebreaker_playerId', playerId);
+                    localStorage.setItem('icebreaker_playerName', playerName);
+                    localStorage.setItem('icebreaker_signatures', JSON.stringify(signatures));
+                    localStorage.setItem('icebreaker_skipCount', skipCount.toString());
+                    localStorage.setItem('icebreaker_promptIndex', currentPromptIndex.toString());
+                }
+            }, [playerId, playerName, signatures, skipCount, currentPromptIndex]);
 
             // Shuffle prompts on mount
             useEffect(() => {
@@ -392,6 +463,27 @@
                     console.error('Error resetting database:', error);
                     setAdminError('Error resetting database. Check console.');
                 }
+            };
+
+            const handleStartNewGame = () => {
+                if (!window.confirm('Start a new game? Your current progress will be lost.')) {
+                    return;
+                }
+
+                // Clear localStorage
+                localStorage.removeItem('icebreaker_playerId');
+                localStorage.removeItem('icebreaker_playerName');
+                localStorage.removeItem('icebreaker_signatures');
+                localStorage.removeItem('icebreaker_skipCount');
+                localStorage.removeItem('icebreaker_promptIndex');
+
+                // Reset state
+                setPlayerId(null);
+                setPlayerName('');
+                setSignatures([]);
+                setSkipCount(0);
+                setCurrentPromptIndex(0);
+                setPage('welcome');
             };
 
             const leaderboardData = players.map(player => ({
@@ -626,27 +718,47 @@
                                     Hey, {playerName}! 👋
                                 </div>
 
-                                <button
-                                    onClick={() => setPage('leaderboard')}
-                                    style={{
-                                        background: 'white',
-                                        padding: '10px 16px',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        fontFamily: 'inherit',
-                                        fontWeight: '600',
-                                        fontSize: '1rem',
-                                        color: '#667eea',
-                                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    <Trophy />
-                                    Leaderboard
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => setPage('leaderboard')}
+                                        style={{
+                                            background: 'white',
+                                            padding: '10px 16px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontFamily: 'inherit',
+                                            fontWeight: '600',
+                                            fontSize: '1rem',
+                                            color: '#667eea',
+                                            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        <Trophy />
+                                        Leaderboard
+                                    </button>
+
+                                    <button
+                                        onClick={handleStartNewGame}
+                                        style={{
+                                            background: 'white',
+                                            padding: '10px 14px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontFamily: 'inherit',
+                                            fontWeight: '600',
+                                            fontSize: '0.9rem',
+                                            color: '#999',
+                                            boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                                        }}
+                                    >
+                                        🔄
+                                    </button>
+                                </div>
                             </div>
 
                             <div style={{
@@ -1021,7 +1133,7 @@
                                                 fontFamily: 'inherit'
                                             }}
                                         >
-                                            🔒 Reset
+                                            🔒 Admin: Reset Database
                                         </button>
                                     ) : (
                                         <div>
